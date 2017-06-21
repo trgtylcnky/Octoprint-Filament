@@ -15,7 +15,8 @@ import RPi.GPIO as GPIO
 class FilamentSensorPlugin(octoprint.plugin.StartupPlugin,
 							octoprint.plugin.SettingsPlugin,
 							octoprint.plugin.EventHandlerPlugin,
-							octoprint.plugin.BlueprintPlugin):
+							octoprint.plugin.BlueprintPlugin,
+							octoprint.plugin.AssetPlugin):
 
 	def initialize(self):
 		self._logger.setLevel(logging.DEBUG)
@@ -28,7 +29,12 @@ class FilamentSensorPlugin(octoprint.plugin.StartupPlugin,
 		GPIO.setwarnings(False)
 		
 		self._logger.info("Filament Sensor Plugin [%s] initialized..."%self._identifier)
-
+	
+	def get_assets(self):
+		return {
+			"js": ['js/filament.js']
+		}
+	
 	def on_after_startup(self):
 		self.PIN_FILAMENT = self._settings.get(["pin"])
 		self.BOUNCE = self._settings.get_int(["bounce"])
@@ -76,6 +82,7 @@ class FilamentSensorPlugin(octoprint.plugin.StartupPlugin,
 			self._logger.debug("Sensor [%s]!"%state)
 			if self._printer.is_printing():
 				self._printer.toggle_pause_print()
+				self._plugin_manager.send_plugin_message(self._identifier, dict(message="Filament runout! Print paused"))
 
 	def get_version(self):
 		return self._plugin_version
